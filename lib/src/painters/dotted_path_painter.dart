@@ -15,7 +15,6 @@ class DottedCropPathPainter extends CustomPainter {
   /// Draw a dotted path around the given path
   DottedCropPathPainter(this._path);
 
-  /// Return a CustomPaint widget with the current CustomPainter
   static CustomPaint drawPath(Path path) =>
       CustomPaint(painter: DottedCropPathPainter(path));
 

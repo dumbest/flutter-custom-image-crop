@@ -136,7 +136,10 @@ class _CustomImageCropState extends State<CustomImageCrop>
         _width = constraints.maxWidth;
         _height = constraints.maxHeight;
         final cropWidth = min(_width, _height) * widget.cropPercentage;
-        final defaultScale = cropWidth / max(image.width, image.height);
+        final imageWidth = min(image.width, image.height);
+        // final defaultScale = min(image.width, image.height) / cropWidth;
+        // final scale = data.scale * defaultScale;
+        final defaultScale = cropWidth / imageWidth;
         final scale = data.scale * defaultScale;
         _path = _getPath(cropWidth, _width, _height);
         return XGestureDetector(
@@ -154,10 +157,10 @@ class _CustomImageCropState extends State<CustomImageCrop>
                   left: data.x + _width / 2,
                   top: data.y + _height / 2,
                   child: Transform(
-                    transform: Matrix4.diagonal3(
-                        vector_math.Vector3(scale, scale, scale))
-                      ..rotateZ(data.angle)
-                      ..translate(-image.width / 2, -image.height / 2),
+                    transform:
+                        Matrix4.diagonal3(vector_math.Vector3(scale, scale, 0))
+                          ..rotateZ(data.angle)
+                          ..translate(-image.width / 2, -image.height / 2),
                     child: Image(
                       image: widget.image,
                     ),
@@ -224,7 +227,7 @@ class _CustomImageCropState extends State<CustomImageCrop>
   }
 
   @override
-  Future<MemoryImage?> onCropImage() async {
+  Future<MemoryImage?> cropImage() async {
     if (_imageAsUIImage == null) {
       return null;
     }
@@ -232,14 +235,12 @@ class _CustomImageCropState extends State<CustomImageCrop>
     final imageHeight = _imageAsUIImage!.height;
     final pictureRecorder = ui.PictureRecorder();
     final canvas = Canvas(pictureRecorder);
-    final uiWidth = min(_width, _height) * widget.cropPercentage;
-    final cropWidth = max(imageWidth, imageHeight).toDouble();
-    final translateScale = cropWidth / uiWidth;
-    final scale = data.scale;
+    final defaultScale =
+        min(imageAsUIImage!.width, imageAsUIImage!.height) / cropWidth;
+    final scale = data.scale * defaultScale;
     final clipPath = Path.from(_getPath(cropWidth, cropWidth, cropWidth));
-    final matrix4Image = Matrix4.diagonal3(vector_math.Vector3.all(1))
-      ..translate(translateScale * data.x + cropWidth / 2,
-          translateScale * data.y + cropWidth / 2)
+    final matrix4Image = Matrix4.diagonal3(vector_math.Vector3(1, 1, 0))
+      ..translate(data.x + cropWidth / 2, data.y + cropWidth / 2)
       ..scale(scale)
       ..rotateZ(data.angle);
     final bgPaint = Paint()
@@ -249,8 +250,10 @@ class _CustomImageCropState extends State<CustomImageCrop>
     canvas.save();
     canvas.clipPath(clipPath);
     canvas.transform(matrix4Image.storage);
-    canvas.drawImage(_imageAsUIImage!,
-        Offset(-imageWidth / 2, -imageHeight / 2), widget.imagePaintDuringCrop);
+    canvas.drawImage(
+        _imageAsUIImage!,
+        Offset(-imageWidth / 2, -imageHeight / 2),
+        imagePaint);
     canvas.restore();
 
     // Optionally remove magenta from image by evaluating every pixel
@@ -261,8 +264,7 @@ class _CustomImageCropState extends State<CustomImageCrop>
     ui.Picture picture = pictureRecorder.endRecording();
     ui.Image image =
         await picture.toImage(cropWidth.floor(), cropWidth.floor());
-
-    // Adding compute would be preferrable. Unfortunately we cannot pass an ui image to this.
+    // Adding compute would be preferable. Unfortunately we cannot pass an ui image to this.
     // A workaround would be to save the image and load it inside of the isolate
     final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
     return bytes == null ? null : MemoryImage(bytes.buffer.asUint8List());
