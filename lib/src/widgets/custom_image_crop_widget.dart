@@ -262,7 +262,7 @@ class _CustomImageCropState extends State<CustomImageCrop>
   }
 
   @override
-  Future<MemoryImage?> onCropImage() async {
+  Future<MemoryImage?> cropImage() async {
     if (_imageAsUIImage == null) {
       return null;
     }
@@ -300,7 +300,7 @@ class _CustomImageCropState extends State<CustomImageCrop>
     ui.Image image =
         await picture.toImage(cropWidth.floor(), cropWidth.floor());
 
-    // Adding compute would be preferrable. Unfortunately we cannot pass an ui image to this.
+    // Adding compute would be preferable. Unfortunately we cannot pass an ui image to this.
     // A workaround would be to save the image and load it inside of the isolate
     final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
     return bytes == null ? null : MemoryImage(bytes.buffer.asUint8List());
