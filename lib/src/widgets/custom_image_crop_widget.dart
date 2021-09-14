@@ -30,6 +30,7 @@ class CustomImageCrop extends StatefulWidget {
 
   /// The shape of the cropping area
   final CustomCropShape shape;
+  final CustomCropShape outputShape;
 
   /// The percentage of the available area that is
   /// reserved for the cropping area
@@ -39,6 +40,8 @@ class CustomImageCrop extends StatefulWidget {
   /// [SolidPathPainter] for more details or how to implement a
   /// custom one
   final CustomPaint Function(Path) drawPath;
+  final bool canRotate;
+  final double minScale;
 
   /// Whether to allow the image to be rotated.
   final bool canRotate;
@@ -82,7 +85,8 @@ class CustomImageCrop extends StatefulWidget {
     required this.cropController,
     this.overlayColor = const Color.fromRGBO(0, 0, 0, 0.5),
     this.backgroundColor = Colors.white,
-    this.shape = CustomCropShape.Circle,
+    this.shape = CustomCropShape.circle,
+    this.outputShape = CustomCropShape.square,
     this.cropPercentage = 0.8,
     this.drawPath = DottedCropPathPainter.drawPath,
     this.canRotate = true,
@@ -90,6 +94,7 @@ class CustomImageCrop extends StatefulWidget {
     this.canMove = true,
     this.customProgressIndicator,
     Paint? imagePaintDuringCrop,
+    this.minScale = 1.0,
     Key? key,
   })  : this.imagePaintDuringCrop = imagePaintDuringCrop ??
             (Paint()..filterQuality = FilterQuality.high),
@@ -297,7 +302,7 @@ class _CustomImageCropState extends State<CustomImageCrop>
     // final bytes = await compute(computeToByteData, <String, dynamic>{'pictureRecorder': pictureRecorder, 'cropWidth': cropWidth});
 
     ui.Picture picture = pictureRecorder.endRecording();
-    ui.Image image =
+    ui.Image outputImage =
         await picture.toImage(cropWidth.floor(), cropWidth.floor());
 
     // Adding compute would be preferable. Unfortunately we cannot pass an ui image to this.
