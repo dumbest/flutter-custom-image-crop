@@ -18,8 +18,11 @@ class CustomImageCrop extends StatefulWidget {
   final Color backgroundColor;
   final Color overlayColor;
   final CustomCropShape shape;
+  final CustomCropShape outputShape;
   final double cropPercentage;
   final CustomPaint Function(Path) drawPath;
+  final bool canRotate;
+  final double minScale;
 
   /// A custom image cropper widget
   ///
@@ -42,9 +45,12 @@ class CustomImageCrop extends StatefulWidget {
     required this.cropController,
     this.overlayColor = const Color.fromRGBO(0, 0, 0, 0.5),
     this.backgroundColor = Colors.white,
-    this.shape = CustomCropShape.Circle,
+    this.shape = CustomCropShape.circle,
+    this.outputShape = CustomCropShape.square,
     this.cropPercentage = 0.8,
     this.drawPath = DottedCropPathPainter.drawPath,
+    this.canRotate = true,
+    this.minScale = 1.0,
     Key? key,
   }) : super(key: key);
 
@@ -165,10 +171,15 @@ class _CustomImageCropState extends State<CustomImageCrop>
   void onScaleUpdate(ScaleEvent event) {
     if (dataTransitionStart != null) {
       addTransition(dataTransitionStart! -
-          CropImageData(scale: event.scale, angle: event.rotationAngle));
+          CropImageData(
+            scale: event.scale,
+            angle: widget.canRotate ? event.rotationAngle : 0,
+          ));
     }
-    dataTransitionStart =
-        CropImageData(scale: event.scale, angle: event.rotationAngle);
+    dataTransitionStart = CropImageData(
+      scale: event.scale,
+      angle: widget.canRotate ? event.rotationAngle : 0,
+    );
   }
 
   void onMoveStart(_) {
@@ -179,9 +190,14 @@ class _CustomImageCropState extends State<CustomImageCrop>
     addTransition(CropImageData(x: event.delta.dx, y: event.delta.dy));
   }
 
-  Path _getPath(double cropWidth, double width, double height) {
-    switch (widget.shape) {
-      case CustomCropShape.Circle:
+  Path _getPath(
+    double cropWidth,
+    double width,
+    double height, {
+    CustomCropShape? shape,
+  }) {
+    switch (shape ?? widget.shape) {
+      case CustomCropShape.circle:
         return Path()
           ..addOval(
             Rect.fromCircle(
@@ -203,16 +219,24 @@ class _CustomImageCropState extends State<CustomImageCrop>
 
   @override
   Future<MemoryImage?> cropImage() async {
-    if (imageAsUIImage == null) {
+    final image = imageAsUIImage;
+    if (image == null) {
       return null;
     }
     final cropWidth = min(width, height) * widget.cropPercentage;
     final pictureRecorder = ui.PictureRecorder();
     final canvas = Canvas(pictureRecorder);
-    final defaultScale =
-        min(imageAsUIImage!.width, imageAsUIImage!.height) / cropWidth;
+    // final defaultScale = min(image.width, image.height) / cropWidth;
+    // final scale = data.scale * defaultScale;
+    final imageWidth = min(image.width, image.height);
+    final defaultScale = cropWidth / imageWidth;
     final scale = data.scale * defaultScale;
-    final clipPath = Path.from(_getPath(cropWidth, cropWidth, cropWidth));
+    final clipPath = Path.from(_getPath(
+      cropWidth,
+      cropWidth,
+      cropWidth,
+      shape: widget.outputShape,
+    ));
     final matrix4Image = Matrix4.diagonal3(vector_math.Vector3(1, 1, 0))
       ..translate(data.x + cropWidth / 2, data.y + cropWidth / 2)
       ..scale(scale)
@@ -226,9 +250,10 @@ class _CustomImageCropState extends State<CustomImageCrop>
     canvas.clipPath(clipPath);
     canvas.transform(matrix4Image.storage);
     canvas.drawImage(
-        imageAsUIImage!,
-        Offset(-imageAsUIImage!.width / 2, -imageAsUIImage!.height / 2),
-        imagePaint);
+      image,
+      Offset(-image.width / 2, -image.height / 2),
+      imagePaint,
+    );
     canvas.restore();
 
     // Optionally remove magenta from image by evaluating every pixel
@@ -237,11 +262,11 @@ class _CustomImageCropState extends State<CustomImageCrop>
     // final bytes = await compute(computeToByteData, <String, dynamic>{'pictureRecorder': pictureRecorder, 'cropWidth': cropWidth});
 
     ui.Picture picture = pictureRecorder.endRecording();
-    ui.Image image =
+    ui.Image outputImage =
         await picture.toImage(cropWidth.floor(), cropWidth.floor());
     // Adding compute would be preferable. Unfortunately we cannot pass an ui image to this.
     // A workaround would be to save the image and load it inside of the isolate
-    final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
+    final bytes = await outputImage.toByteData(format: ui.ImageByteFormat.png);
 
     return bytes == null ? null : MemoryImage(bytes.buffer.asUint8List());
   }
@@ -270,6 +295,6 @@ class _CustomImageCropState extends State<CustomImageCrop>
 }
 
 enum CustomCropShape {
-  Circle,
-  Square,
+  circle,
+  square,
 }

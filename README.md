@@ -36,11 +36,17 @@ The color behind the image. This color will also be used when there are gaps/emp
 ### shape
 The shape of the cropping path.
 
+### outputShape
+The shape of the cropping path for the output image.
+
 ### cropPercentage
 How big the crop should be in regards to the width and height available to the cropping widget.
 
 ### drawPath
 How the border of the crop should be painted. default DottedCropPathPainter.drawPath and SolidCropPathPainter.drawPath are provided, but you can create/provide any CustomPaint.
+
+### canRotate
+Whether to allow the image to be rotated.
 
 # Controller Methods
 
@@ -61,8 +67,8 @@ Set the position, angle and scale to the specified values. This can be used to c
 
 Reset the image to its default state
 
-## onCropImage
-`Future<MemoryImage> onCropImage()`
+## cropImage
+`Future<MemoryImage> cropImage()`
 
 Crops the image in its current state, this will return a MemoryImage that contains the cropped image
 
@@ -110,7 +116,7 @@ class _MyHomePageState extends State<MyHomePage> {
           Expanded(
             child: CustomImageCrop(
               cropController: controller,
-              image: const AssetImage('assets/test.png'), // Any Imageprovider will work, try with a NetworkImage for example...
+              image: const AssetImage('assets/test.png'), // Any ImageProvider will work, try with a NetworkImage for example...
             ),
           ),
           Row(
@@ -123,7 +129,7 @@ class _MyHomePageState extends State<MyHomePage> {
               IconButton(
                 icon: const Icon(Icons.crop),
                 onPressed: () async {
-                  final image = await controller.onCropImage();
+                  final image = await controller.cropImage();
                   if (image != null) {
                     Navigator.of(context).push(MaterialPageRoute(builder: (BuildContext context) => ResultScreen(image: image)));
                   }
