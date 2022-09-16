@@ -31,7 +31,7 @@ class CustomImageCrop extends StatefulWidget {
   /// The shape of the cropping area
   final CustomCropShape shape;
 
-/// The shape of the output
+  /// The shape of the output
   final CustomCropShape outputShape;
 
   /// The percentage of the available area that is
@@ -255,17 +255,22 @@ class _CustomImageCropState extends State<CustomImageCrop>
     final canvas = Canvas(pictureRecorder);
     // final defaultScale = min(image.width, image.height) / cropWidth;
     // final scale = data.scale * defaultScale;
-    final imageWidth = min(image.width, image.height);
-    final defaultScale = cropWidth / imageWidth;
-    final scale = data.scale * defaultScale;
+    // final imageWidth = min(image.width, image.height);
+    final uiWidth = min(_width, _height) * widget.cropPercentage;
+    final cropWidth = max(imageWidth, imageHeight).toDouble();
+    final translateScale = cropWidth / uiWidth;
+    final scale = data.scale;
+    // final defaultScale = cropWidth / imageWidth;
+    // final scale = data.scale * defaultScale;
     final clipPath = Path.from(_getPath(
       cropWidth,
       cropWidth,
       cropWidth,
       shape: widget.outputShape,
     ));
-    final matrix4Image = Matrix4.diagonal3(vector_math.Vector3(1, 1, 0))
-      ..translate(data.x + cropWidth / 2, data.y + cropWidth / 2)
+    final matrix4Image = Matrix4.diagonal3(vector_math.Vector3.all(1))
+      ..translate(translateScale * data.x + cropWidth / 2,
+          translateScale * data.y + cropWidth / 2)
       ..scale(scale)
       ..rotateZ(data.angle);
     final bgPaint = Paint()
@@ -275,10 +280,8 @@ class _CustomImageCropState extends State<CustomImageCrop>
     canvas.save();
     canvas.clipPath(clipPath);
     canvas.transform(matrix4Image.storage);
-    canvas.drawImage(
-        _imageAsUIImage!,
-        Offset(-imageWidth / 2, -imageHeight / 2),
-        imagePaint);
+    canvas.drawImage(_imageAsUIImage!,
+        Offset(-imageWidth / 2, -imageHeight / 2), widget.imagePaintDuringCrop);
     canvas.restore();
 
     // Optionally remove magenta from image by evaluating every pixel
