@@ -145,11 +145,10 @@ class _CustomImageCropState extends State<CustomImageCrop>
         _height = constraints.maxHeight;
         final cropWidth = min(_width, _height) * widget.cropPercentage;
         final imageWidth = min(image.width, image.height);
-        // final defaultScale = min(image.width, image.height) / cropWidth;
-        // final scale = data.scale * defaultScale;
         final defaultScale = cropWidth / imageWidth;
         final scale = data.scale * defaultScale;
         _path = _getPath(cropWidth, _width, _height);
+
         return XGestureDetector(
           onMoveStart: onMoveStart,
           onMoveUpdate: onMoveUpdate,
@@ -165,10 +164,10 @@ class _CustomImageCropState extends State<CustomImageCrop>
                   left: data.x + _width / 2,
                   top: data.y + _height / 2,
                   child: Transform(
-                    transform:
-                        Matrix4.diagonal3(vector_math.Vector3(scale, scale, 0))
-                          ..rotateZ(data.angle)
-                          ..translate(-image.width / 2, -image.height / 2),
+                    transform: Matrix4.diagonal3(
+                        vector_math.Vector3(scale, scale, scale))
+                      ..rotateZ(data.angle)
+                      ..translate(-image.width / 2, -image.height / 2),
                     child: Image(
                       image: widget.image,
                     ),
@@ -253,15 +252,10 @@ class _CustomImageCropState extends State<CustomImageCrop>
     final imageHeight = _imageAsUIImage!.height;
     final pictureRecorder = ui.PictureRecorder();
     final canvas = Canvas(pictureRecorder);
-    // final defaultScale = min(image.width, image.height) / cropWidth;
-    // final scale = data.scale * defaultScale;
-    // final imageWidth = min(image.width, image.height);
     final uiWidth = min(_width, _height) * widget.cropPercentage;
-    final cropWidth = max(imageWidth, imageHeight).toDouble();
+    final cropWidth = min(imageWidth, imageHeight).toDouble();
     final translateScale = cropWidth / uiWidth;
     final scale = data.scale;
-    // final defaultScale = cropWidth / imageWidth;
-    // final scale = data.scale * defaultScale;
     final clipPath = Path.from(_getPath(
       cropWidth,
       cropWidth,
