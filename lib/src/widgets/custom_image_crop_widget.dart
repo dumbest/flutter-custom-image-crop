@@ -40,7 +40,6 @@ class CustomImageCrop extends StatefulWidget {
   /// [SolidPathPainter] for more details or how to implement a
   /// custom one
   final CustomPaint Function(Path) drawPath;
-  final double minScale;
 
   /// Whether to allow the image to be rotated.
   final bool canRotate;
@@ -93,7 +92,6 @@ class CustomImageCrop extends StatefulWidget {
     this.canMove = true,
     this.customProgressIndicator,
     Paint? imagePaintDuringCrop,
-    this.minScale = 1.0,
     Key? key,
   })  : this.imagePaintDuringCrop = imagePaintDuringCrop ??
             (Paint()..filterQuality = FilterQuality.high),
@@ -163,8 +161,9 @@ class _CustomImageCropState extends State<CustomImageCrop>
       builder: (context, constraints) {
         _width = constraints.maxWidth;
         _height = constraints.maxHeight;
+        // Use `min()` to set the image to fit the cropping area.
         final cropWidth = min(_width, _height) * widget.cropPercentage;
-        final defaultScale = cropWidth / max(image.width, image.height);
+        final defaultScale = cropWidth / min(image.width, image.height);
         final scale = data.scale * defaultScale;
         _path = _getPath(cropWidth, _width, _height);
         return XGestureDetector(
@@ -274,8 +273,9 @@ class _CustomImageCropState extends State<CustomImageCrop>
     final imageHeight = _imageAsUIImage!.height;
     final pictureRecorder = ui.PictureRecorder();
     final canvas = Canvas(pictureRecorder);
+    // Use `min()` to set the image to fit the cropping area.
     final uiWidth = min(_width, _height) * widget.cropPercentage;
-    final cropWidth = max(imageWidth, imageHeight).toDouble();
+    final cropWidth = min(imageWidth, imageHeight).toDouble();
     final translateScale = cropWidth / uiWidth;
     final scale = data.scale;
     final clipPath = Path.from(_getPath(cropWidth, cropWidth, cropWidth));

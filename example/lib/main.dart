@@ -67,11 +67,12 @@ class _MyHomePageState extends State<MyHomePage> {
               cropController: controller,
               // image: const AssetImage('assets/test.png'), // Any ImageProvider will work, try with a NetworkImage for example...
               image: const NetworkImage(
-                  'https://upload.wikimedia.org/wikipedia/en/7/7d/Lenna_%28test_image%29.png'),
-              shape: CustomCropShape.Square,
+                  'https://upload.wikimedia.org/wikipedia/commons/5/56/White_shark.jpg'),
+              shape: CustomCropShape.Circle,
+              outputShape: CustomCropShape.Square,
               canRotate: true,
-              canMove: false,
-              canScale: false,
+              canMove: true,
+              canScale: true,
               customProgressIndicator: const CupertinoActivityIndicator(),
             ),
           ),
